@@ -47,28 +47,45 @@ def assign_colors_to_points(pcd, labels):
 
     return pcd
 
+def load_color_mapping(json_file):
+    with open(json_file, 'r') as file:
+        color_mapping = json.load(file)
+    return color_mapping
+
+def apply_colors_to_point_cloud(pcd, labels, color_mapping):
+    points = np.asarray(pcd.points)
+    colors = [hex_to_rgb(color_mapping[str(labels[str(i)])]) for i in range(len(points))]
+    pcd.colors = o3d.utility.Vector3dVector(colors)
+    return pcd
+
+def hex_to_rgb(hex_color):
+    hex_color = hex_color.lstrip('#')
+    return tuple(int(hex_color[i:i+2], 16)/255.0 for i in (0, 2, 4))
+
+def visualize_point_cloud(pcd):
+    o3d.visualization.draw_geometries([pcd])
+
+
 def visualize_point_cloud(pcd):
     o3d.visualization.draw_geometries([pcd])
 
 # 파일 경로 설정
 import os
 
-file_name = "COMMERCIALcastle_mesh0365"
+file_name = "RESIDENTIALhouse_mesh9936"
 
 building_pointcloud = os.path.join("Z:", "iiixr-drive", "Projects", "2023_Building", "BuildingNet", "POINT_CLOUDS", f"{file_name}.ply")
 annotation_json = os.path.join("Z:", "iiixr-drive", "Projects", "2023_Building", "BuildingNet", "point_labels", f"{file_name}_label.json")
 
+# 데이터 불러오기
 pcd, labels = load_point_cloud_and_labels(building_pointcloud, annotation_json)
-n_colors = len(set(labels.values()))
+color_mapping = load_color_mapping(color_mapping_json)
 
 # 색상 맵 (cmap) 정의
-cmap = matplotlib.cm.get_cmap('viridis', n_colors)
+# cmap = matplotlib.cm.get_cmap('viridis', n_colors)
 
-# 색상이 할당된 포인트 클라우드 생성
-colored_pcd = assign_colors_to_points(pcd, labels)
+# 색상 적용
+colored_pcd = apply_colors_to_point_cloud(pcd, labels, color_mapping)
 
-# 레이블 별 색상 시각화
-visualize_labels_with_colors(labels, cmap)
-
-# 포인트 클라우드 시각화
+# 시각화
 visualize_point_cloud(colored_pcd)
