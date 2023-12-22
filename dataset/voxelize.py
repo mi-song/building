@@ -10,7 +10,7 @@ file_name = "RESIDENTIALhouse_mesh9936"
 root_path = os.path.join("Z:", "iiixr-drive", "Projects", "2023_Building", "BuildingNet")
 
 building_pointcloud = os.path.join(root_path, "POINT_CLOUDS", f"{file_name}.ply")
-annotation_json_path = os.path.join(root_path, "point_labels", f"{file_name}_label.json")
+annotation_json_path = os.path.join(root_path, "updated_point_labels", f"{file_name}_label.json")
 color_mapping_path = os.path.join(root_path, "number_color_mapping.json")
 
 with open(color_mapping_path, 'r') as color_file:
@@ -52,7 +52,6 @@ for voxel_idx, point_indices in point_groups.items():
 
     # Determine color based on the most common value using the hash function
     color = value_to_color(most_common_value)
-    print(f"{most_common_value}, {color}")
 
     # Create a voxel as a colored box
     voxel_center = np.array(voxel_idx) * voxel_size + voxel_size / 2

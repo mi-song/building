@@ -65,17 +65,16 @@ def hex_to_rgb(hex_color):
 def visualize_point_cloud(pcd):
     o3d.visualization.draw_geometries([pcd])
 
-
-def visualize_point_cloud(pcd):
-    o3d.visualization.draw_geometries([pcd])
-
 # 파일 경로 설정
 import os
 
 file_name = "RESIDENTIALhouse_mesh9936"
 
-building_pointcloud = os.path.join("Z:", "iiixr-drive", "Projects", "2023_Building", "BuildingNet", "POINT_CLOUDS", f"{file_name}.ply")
-annotation_json = os.path.join("Z:", "iiixr-drive", "Projects", "2023_Building", "BuildingNet", "point_labels", f"{file_name}_label.json")
+root_path = os.path.join("Z:", "iiixr-drive", "Projects", "2023_Building", "BuildingNet")
+
+building_pointcloud = os.path.join(root_path, "POINT_CLOUDS", f"{file_name}.ply")
+annotation_json = os.path.join(root_path, "updated_point_labels", f"{file_name}_label.json")
+color_mapping_json = os.path.join(root_path, "number_color_mapping.json")
 
 # 데이터 불러오기
 pcd, labels = load_point_cloud_and_labels(building_pointcloud, annotation_json)
