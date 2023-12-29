@@ -127,3 +127,63 @@ for point, color in sorted_points:
 plt.scatter(center[0], center[1], color='red', label='Center')  # 중심점 표시
 plt.legend()
 plt.show()
+
+print(sorted_points)
+
+def merge_continuous_colors(data):
+    merged_data = []
+    current_group = []
+
+    def add_merged_point(group):
+        if group:
+            center_point = np.mean([p[0] for p in group], axis=0)
+            color = group[0][1]
+            merged_data.append((center_point, color))
+
+    for point, color in data:
+        if color != current_group[-1][1] if current_group else None:
+            add_merged_point(current_group)
+            current_group = [(point, color)]
+        else:
+            current_group.append((point, color))
+
+    add_merged_point(current_group)
+
+    # 마지막 점과 첫 번째 점이 같은 색상인 경우 합치기
+    if merged_data and merged_data[0][1] == merged_data[-1][1]:
+        first_point, first_color = merged_data[0]
+        last_point, _ = merged_data[-1]
+        center_point = np.mean([first_point, last_point], axis=0)
+        merged_data[0] = (center_point, first_color)
+        merged_data.pop()
+
+    return merged_data
+
+merged_data = merge_continuous_colors(sorted_points)
+
+print(merged_data)
+
+# 그래프 그리기
+plt.figure()
+
+# 먼저 모든 선(엣지)을 그립니다
+for i in range(len(merged_data)-1):
+    point1 = merged_data[i][0]
+    point2 = merged_data[i+1][0]
+    plt.plot([point1[0], point2[0]], [point1[1], point2[1]], color='black')  # 엣지를 검은색으로 설정
+
+# 이후 모든 점을 그립니다
+for point, color in merged_data:
+    plt.scatter(point[0], point[1], color=color)
+
+plt.scatter(center[0], center[1], color='red', label='Center')  # 중심점 표시
+plt.legend()
+plt.show()
+
+# # 결과 출력
+# for point, color in merged_data:
+#     print(f"Point: {point}, Color: {color}")
+
+##############################################
+# abstract graph
+
