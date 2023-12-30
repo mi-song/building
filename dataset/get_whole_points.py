@@ -89,18 +89,64 @@ def sort_ccw(points):
 
     reordered_points = np.array(reordered_points_list)
 
-    # 정렬된 점들을 플롯
-    plt.scatter(reordered_points[:, 0], reordered_points[:, 1])
-    plt.scatter(starting_point[0], starting_point[1], color='red')  # 시작점
-
-    # 각 점에 순서를 표시
-    for idx, point in enumerate(reordered_points):
-        plt.text(point[0], point[1], str(idx), fontsize=12, verticalalignment='bottom', horizontalalignment='right')
+    # # 정렬된 점들을 플롯
+    # plt.scatter(reordered_points[:, 0], reordered_points[:, 1])
+    # plt.scatter(starting_point[0], starting_point[1], color='red')  # 시작점
+    #
+    # # 각 점에 순서를 표시
+    # for idx, point in enumerate(reordered_points):
+    #     plt.text(point[0], point[1], str(idx), fontsize=12, verticalalignment='bottom', horizontalalignment='right')
 
     # 플롯 표시
-    plt.show()
+    # plt.show()
 
-    return reordered_points
+    reordered_indices = [original_indices[np.where((points == point).all(axis=1))[0][0]] for point in reordered_points]
+
+    # 변경된 순서와 인덱스 배열 반환
+    return reordered_points, reordered_indices
+
+    # return reordered_points
+
+# 좌표를 합치는 함수
+def merge_coordinates(coords, lbls):
+    merged_coords = []
+    merged_labels = []
+
+    # 좌표 배열이 비어있는지 확인
+    if len(coords) == 0:
+        return np.array(merged_coords), np.array(merged_labels)
+
+    # 첫 번째와 마지막 레이블이 같은 경우, 첫 번째 레이블의 좌표들을 마지막에 추가
+    if lbls[0] == lbls[-1]:
+        coords = np.append(coords, [coords[0]], axis=0)
+        lbls = lbls + [lbls[0]]
+
+    current_group = [coords[0]]
+    current_label = lbls[0]
+
+    # 연속적인 좌표 그룹을 찾기 위한 반복문
+    for coord, label in zip(coords[1:], lbls[1:]):
+        if label == current_label:
+            # 같은 레이블의 좌표를 현재 그룹에 추가
+            current_group.append(coord)
+        else:
+            # 새로운 레이블이 나타날 때, 이전 그룹의 중간 지점 계산 및 저장
+            avg_coord = np.mean(current_group, axis=0)
+            merged_coords.append(avg_coord)
+            merged_labels.append(current_label)
+
+            # 새로운 그룹 시작
+            current_group = [coord]
+            current_label = label
+
+    # 마지막 그룹 처리 (첫 번째와 마지막이 같은 경우 이미 추가되었으므로 생략)
+    if lbls[0] != lbls[-1] and current_group:
+        avg_coord = np.mean(current_group, axis=0)
+        merged_coords.append(avg_coord)
+        merged_labels.append(current_label)
+
+    return np.array(merged_coords), np.array(merged_labels)
+
 
 
 for file_name in tqdm(file_names):
@@ -196,26 +242,51 @@ for file_name in tqdm(file_names):
 
         # print(x_y_coords_arr)
 
-        sorted_x_y_coords_arr = sort_ccw(x_y_coords_arr)
+        sorted_x_y_coords_arr, reordered_indices = sort_ccw(x_y_coords_arr)
+
+        x_y_coords_arr = sorted_x_y_coords_arr
 
         x_y_coords = [list(row) for row in x_y_coords_arr]
         z_coords = [b_value] * len(x_y_coords)
 
         points = [sublist + [z_coords[i]] for i, sublist in enumerate(x_y_coords)]
 
-        semantic = [semantic[i] for i in original_indices]
+        # semantic = [semantic[i] for i in original_indices]
 
-        # # 각 점을 레이블에 맞는 색상으로 플롯
+        semantic = [semantic[i] for i in reordered_indices]
+
+        semantic = np.array(semantic)
+
+        # 좌표 합치기
+        merged_coordinates_fixed, merged_labels_fixed = merge_coordinates(points, semantic)
+
+        # 합쳐진 좌표와 레이블을 플롯
+        plt.scatter(merged_coordinates_fixed[:, 0], merged_coordinates_fixed[:, 1], c=merged_labels_fixed, marker='x')
+        plt.colorbar(label='Merged Semantic Labels')
+        plt.title('Scatter Plot of Merged Coordinates with Labels')
+        plt.xlabel('X Coordinate')
+        plt.ylabel('Y Coordinate')
+        plt.grid(True)
+        plt.show()
+
+
+        # 각 점을 레이블에 맞는 색상으로 플롯
         # for i in range(len(x_y_coords_arr)):
         #     plt.scatter(x_y_coords_arr[i, 0], x_y_coords_arr[i, 1], color=color_mapping.get(str(semantic[i]), '#000000'))
         #     plt.text(x_y_coords_arr[i, 0], x_y_coords_arr[i, 1], str(semantic[i]), fontsize=8, verticalalignment='bottom')
+
+        for i in range(len(x_y_coords_arr)):
+            plt.scatter(x_y_coords_arr[i, 0], x_y_coords_arr[i, 1],
+                        color=color_mapping.get(str(semantic[i]), '#000000'))
+            # 인덱스를 표시
+            plt.text(x_y_coords_arr[i, 0], x_y_coords_arr[i, 1], str(i), fontsize=8, verticalalignment='bottom')
 
         # for i in range(len(original_points)):
         #     plt.scatter(original_points[i, 0], original_points[i, 1], color=color_mapping.get(str(semantic[i]), '#000000'))
         #     plt.text(original_points[i, 0], original_points[i, 1], str(semantic[i]), fontsize=8, verticalalignment='bottom')
 
         # 그래프 표시
-        # plt.show()
+        plt.show()
 
         coords_semantic = [[sublist, semantic[i]] for i, sublist in enumerate(points)]
 
