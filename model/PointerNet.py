@@ -289,7 +289,7 @@ class PointerNet(nn.Module):
         # Initialize decoder_input0
         nn.init.uniform(self.decoder_input0, -1, 1)
 
-    def forward(self, inputs):
+    def forward(self, inputs, target_coords):
         """
         PointerNet - Forward-pass
 
@@ -310,15 +310,37 @@ class PointerNet(nn.Module):
         encoder_hidden0 = self.encoder.init_hidden(embedded_inputs)
         encoder_outputs, encoder_hidden = self.encoder(embedded_inputs,
                                                        encoder_hidden0)
-        if self.bidir:
-            decoder_hidden0 = (torch.cat(encoder_hidden[0][-2:], dim=-1),
-                               torch.cat(encoder_hidden[1][-2:], dim=-1))
-        else:
-            decoder_hidden0 = (encoder_hidden[0][-1],
-                               encoder_hidden[1][-1])
-        (outputs, pointers), decoder_hidden = self.decoder(embedded_inputs,
-                                                           decoder_input0,
-                                                           decoder_hidden0,
-                                                           encoder_outputs)
+
+        # target coords embedding (decoder)
+        target_length = target_coords.size(1)
+        target_coords = target_coords.view(batch_size * target_length, -1)
+        embedded_targets = self.embedding(target_coords).view(batch_size, target_length, -1)
+
+        decoder_hidden = (encoder_hidden[0][-1], encoder_hidden[1][-1])
+
+        # # initialize decoder
+        # if self.bidir:
+        #     decoder_hidden0 = (torch.cat(encoder_hidden[0][-2:], dim=-1),
+        #                        torch.cat(encoder_hidden[1][-2:], dim=-1))
+        # else:
+        #     decoder_hidden0 = (encoder_hidden[0][-1],
+        #                        encoder_hidden[1][-1])
+
+        outputs, pointers = [], []
+        for i in range(target_length):
+            decoder_input_t = embedded_targets[:, i, :]  # i번째 타겟 좌표의 임베딩
+            (output, pointer), decoder_hidden = self.decoder(decoder_input_t,
+                                                             decoder_hidden,
+                                                             encoder_outputs)
+            outputs.append(output)
+            pointers.append(pointer)
+
+        # (outputs, pointers), decoder_hidden = self.decoder(embedded_inputs,
+        #                                                    decoder_input0,
+        #                                                    decoder_hidden0,
+        #                                                    encoder_outputs)
+
+        outputs = torch.cat(outputs, dim=1)
+        pointers = torch.cat(pointers, dim=1)
 
         return outputs, pointers

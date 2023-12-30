@@ -68,7 +68,7 @@ def visualize_point_cloud(pcd):
 # 파일 경로 설정
 import os
 
-file_name = "RESIDENTIALhouse_mesh9936"
+file_name = "COMMERCIALmuseum_mesh1018"
 
 root_path = os.path.join("Z:", "iiixr-drive", "Projects", "2023_Building", "BuildingNet")
 
